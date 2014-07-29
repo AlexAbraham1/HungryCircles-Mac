@@ -11,9 +11,10 @@ void ofApp::setup() {
     
     grabber = shared_ptr<ofVideoGrabber>(new ofVideoGrabber());
     grabber->setPixelFormat(OF_PIXELS_RGB);
-    DEVICE_ID = 0;
+    DEVICE_ID = grabber->listDevices().size() - 1;
     grabber->setDeviceID(DEVICE_ID);
     grabber->initGrabber(screenWidth, screenHeight);
+    image.allocate(screenWidth, screenHeight, OF_IMAGE_COLOR);
     
     haarScaleFactor = 2;
     
@@ -29,6 +30,7 @@ void ofApp::setup() {
     grayCv.allocate(haarWidth, haarHeight);
     
     firstRun = true;
+    invertColors = false;
     
     minRadius = 5;
     maxRadius = 15;
@@ -41,7 +43,7 @@ void ofApp::update(){
         
         //Detect Eyes
         image.setFromPixels(grabber->getPixelsRef());
-        //fixImageRotation(); //Temporarily disabled since it is too slow without restarting video grabber
+        image.mirror(false, true);
         
         colorCv = image.getPixels();
         colorCvSmall.scaleIntoMe(colorCv, CV_INTER_NN);
@@ -93,7 +95,10 @@ void ofApp::draw(){
     ofSetHexColor(0xFFFFFF);
     for (std::vector<Circle>::size_type i = 0; i != circles.size(); i++) {
         Circle * circle = circles[i];
-        ofColor color = grabber->getPixelsRef().getColor(circle->x, circle->y);
+        ofColor color = image.getPixelsRef().getColor(circle->x, circle->y);
+        if (invertColors) {
+            color.invert();
+        }
         circle->color = color;
         circle->drawCircle();
     }
@@ -125,23 +130,31 @@ void ofApp::draw(){
 void ofApp::keyPressed  (int key){
     
     switch (key){
-        case 'a':
+        case OF_KEY_LEFT:
             if (maxRadius >= 15) {
                 maxRadius -= 5;
                 circles.clear();
                 firstRun = true;
             }
             break;
-        case 's':
+        case OF_KEY_RIGHT:
             maxRadius += 5;
             circles.clear();
             firstRun = true;
             break;
-        case 'r':
+        case OF_KEY_UP:
+            invertColors = !invertColors;
+            break;
+        case 'c':
             maxRadius = 15;
             circles.clear();
+            invertColors = false;
             firstRun = true;
             break;
+        case ' ':
+            saveImage();
+            break;
+        
     }
 }
 
@@ -224,4 +237,10 @@ void ofApp::touchCircle(int x, int y) {
     circle->color = color;
     
     added_circles.push_back(circle);
+}
+
+void ofApp::saveImage() {
+    stringstream ss;
+    ss << ofGetElapsedTimef();
+    ofSaveScreen(ofFilePath::getUserHomeDir() + "/Desktop/" + ss.str() + ".jpg");
 }

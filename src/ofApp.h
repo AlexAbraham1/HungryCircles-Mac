@@ -28,6 +28,7 @@ public:
     void switchInvert();
     void fixZIndex();
     void touchCircle(int x, int y);
+    void saveImage();
     
     shared_ptr<ofVideoGrabber> grabber;
     
@@ -39,6 +40,7 @@ public:
     float haarScaleFactor;
     
     bool firstRun;
+    bool invertColors;
     
     
     
