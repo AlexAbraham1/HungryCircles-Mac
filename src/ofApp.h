@@ -41,6 +41,7 @@ public:
     
     bool firstRun;
     bool invertColors;
+    bool dragmode;
     
     
     
@@ -51,6 +52,8 @@ public:
     
     int minRadius;
     int maxRadius;
+    int minZ;
+    int maxZ;
 
     int DEVICE_ID;
     
@@ -59,5 +62,9 @@ public:
     int haarWidth;
     int haarHeight;
     
+    int maxTimesDrawn;
+    
     ofTrueTypeFont font;
+    
+    ofEasyCam cam;
 };

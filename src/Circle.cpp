@@ -13,7 +13,7 @@ Circle::Circle() {
 void Circle::drawCircle() {
     ofPushStyle();
 	ofSetColor(color);
-	ofCircle(x, y, z, radius);
+	ofDrawSphere(x, y, z, radius);
 	timesDrawn++;
     ofPopStyle();
 }

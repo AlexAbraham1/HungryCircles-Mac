@@ -6,8 +6,10 @@ void ofApp::setup() {
     ofSetLogLevel (OF_LOG_VERBOSE);
     font.loadFont("verdana.ttf",72);
     
-    screenWidth = 640;
-    screenHeight = 480;
+    screenWidth = ofGetWidth();
+    screenHeight = ofGetHeight();
+    
+    ofEnableDepthTest(); //Used to calculate where to draw elements based on Z index instead of order drawn
     
     grabber = shared_ptr<ofVideoGrabber>(new ofVideoGrabber());
     grabber->setPixelFormat(OF_PIXELS_RGB);
@@ -34,6 +36,12 @@ void ofApp::setup() {
     
     minRadius = 5;
     maxRadius = 15;
+    minZ = 10;
+    maxZ = 100;
+    
+    maxTimesDrawn = 10;
+    
+    dragmode = false;
 }
 //--------------------------------------------------------------
 void ofApp::update(){
@@ -59,6 +67,8 @@ void ofApp::update(){
                 
                 int radius = int(minRadius+ static_cast<float>(rand())/ (static_cast<float>(RAND_MAX/ (maxRadius - minRadius))));
                 
+                int z = int(minZ+ static_cast<float>(rand())/ (static_cast<float>(RAND_MAX/ (maxZ - minZ))));
+                
                 if (isBlankSpace(x, y)) {
                     Circle * circle = new Circle();
                     
@@ -66,6 +76,7 @@ void ofApp::update(){
                     circle->y = y;
                     
                     circle->radius = radius;
+                    circle->z = z;
                     
                     circles.push_back(circle);
                 }
@@ -84,6 +95,12 @@ void ofApp::update(){
             
         }
         
+        for(std::list<Circle*>::iterator circle = added_circles.begin(); circle != added_circles.end(); ++circle) {
+            if ((*circle)->timesDrawn > maxTimesDrawn) {
+                circle = added_circles.erase(circle);
+            }
+        }
+        
         
     }
 
@@ -92,6 +109,11 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    
+    if (dragmode) {
+        cam.begin();
+    }
+    
     ofSetHexColor(0xFFFFFF);
     for (std::vector<Circle>::size_type i = 0; i != circles.size(); i++) {
         Circle * circle = circles[i];
@@ -101,6 +123,12 @@ void ofApp::draw(){
         }
         circle->color = color;
         circle->drawCircle();
+    }
+    
+    for(std::list<Circle*>::iterator circle = added_circles.begin(); circle != added_circles.end(); ++circle) {
+        if ((*circle)->timesDrawn <= maxTimesDrawn) {
+            (*circle)->drawCircle();
+        }
     }
     
     
@@ -118,11 +146,16 @@ void ofApp::draw(){
         
         
         int radius1 = eye.boundingRect.width/3;
-        
+        ofEnableDepthTest();
         ofSetColor(0, 0, 255);
         ofCircle(x, y, 100, radius1);
     }
     ofPopStyle();
+    
+    if (dragmode) {
+        cam.end();
+    }
+    
 }
 
 
@@ -154,6 +187,11 @@ void ofApp::keyPressed  (int key){
         case ' ':
             saveImage();
             break;
+        case 'f':
+            ofToggleFullscreen();
+        case 'd':
+            dragmode = !dragmode;
+            break;
         
     }
 }
@@ -168,6 +206,7 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
+   
 }
 
 //--------------------------------------------------------------
@@ -216,7 +255,11 @@ void ofApp::fixZIndex() {
         
         float smallRadius = (minRadius + ((minRadius + maxRadius)/2))/2;
         if (circle->radius <= smallRadius) {
-            circle->z = 50;
+            
+            int largeZ = .75 * (minZ + maxZ);
+            int z = int(largeZ+ static_cast<float>(rand())/ (static_cast<float>(RAND_MAX/ (maxZ - largeZ))));
+            
+            circle->z = z;
         }
     }
 }
